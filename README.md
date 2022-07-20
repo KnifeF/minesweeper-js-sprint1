@@ -4,3 +4,5 @@ not contain mines without being "blown up" by clicking on a
 square with a mine underneath.
 Minesweeper functionality is based on the reference game:
 https://minesweeperonline.com/
+
+The game is ready to be published at https://knifef.github.io/minesweeper-js-sprint1/
