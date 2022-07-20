@@ -24,11 +24,6 @@ o Cell without neighbors – expand it and its 1st degree
 neighbors
 */
 
-// TODO-1: the seed app
-// ##########################
-// 1. Create a 4x4 gBoard Matrix containing Objects. 
-// Place 2 mines manually when each cell’s isShown set to true.
-// 2. Present the mines using renderBoard() function.
 // ##########################
 // TODO-2: counting neighbors
 // ##########################
@@ -55,8 +50,8 @@ neighbors
 
 
 
-const MINE = '🔲'
-const SMILEY = '💎'
+const MINE = '💣'
+const SMILEY = '😄'
 const EMPTY = ' '
 
 var gTimer
@@ -64,7 +59,9 @@ var gTimer
 var gMinesNegCount
 
 // The model
-// var gBoard = {
+var gBoard
+
+// var gCell = {
 //     minesAroundCount: 4,
 //     isShown: true,
 //     isMine: false,
@@ -76,10 +73,10 @@ var gMinesNegCount
 // board size is set (in this case:
 // 4x4 board and how many mines
 // to put)
-// var gLevel = {
-//     SIZE: 4,
-//     MINES: 2
-// }
+var gLevel = {
+    SIZE: 4,
+    MINES: 2
+}
 
 
 // This is an object in which you
@@ -105,7 +102,17 @@ function initGame() {
     /**
      * initializes the minesweeper game
      */
+    console.log('called init')
+    gBoard = buildBoard()
+    renderBoard(gBoard, '.game-board')
+
 }
+
+// TODO-1: the seed app
+// ##########################
+// 1. Create a 4x4 gBoard Matrix containing Objects. 
+// Place 2 mines manually when each cell’s isShown set to true.
+// 2. Present the mines using renderBoard() function.
 
 function buildBoard() {
     /**
@@ -114,6 +121,87 @@ function buildBoard() {
      * Call setMinesNegsCount()
      * Return the created board
      */
+    var mat = []
+    for (var i = 0; i < gLevel.SIZE; i++) {
+        var row = []
+        for (var j = 0; j < gLevel.SIZE; j++) {
+            var gCell = {
+                minesAroundCount: 0,
+                isShown: false,
+                isMine: false,
+                isMarked: false
+            }
+            row.push(gCell)
+        }
+        mat.push(row)
+    }
+    // change later -  Place 2 mines manually when each cell’s isShown set to true. 
+    mat[0][2].isMine = true
+    mat[0][2].isShown = true
+
+    mat[2][3].isMine = true
+    mat[2][3].isShown = true
+
+    return mat
+}
+
+function renderBoard(mat, selector) {
+    var strHTML = '<table border="0"><tbody>'
+    for (var i = 0; i < mat.length; i++) {
+        strHTML += '<tr>'
+        for (var j = 0; j < mat[0].length; j++) {
+            // const cell = mat[i][j]
+            var cell = mat[i][j].isMine
+            const className = `cell cell-${i}-${j}`
+            strHTML += `<td class="${className}"> ${cell} </td>`
+        }
+        strHTML += '</tr>'
+    }
+    strHTML += '</tbody></table>'
+    const elContainer = document.querySelector(selector)
+    elContainer.innerHTML = strHTML
+}
+
+function countNeighbors(cellI, cellJ, mat) {
+    /**
+     * counts neighbors
+     */
+    var neighborsCount = 0;
+    for (var i = cellI - 1; i <= cellI + 1; i++) {
+        if (i < 0 || i >= mat.length) continue;
+        for (var j = cellJ - 1; j <= cellJ + 1; j++) {
+            if (i === cellI && j === cellJ) continue;
+            if (j < 0 || j >= mat[i].length) continue;
+            if (mat[i][j] === MINE) neighborsCount++;
+        }
+    }
+    return neighborsCount;
+}
+
+// function manuallyCells() {
+// }
+
+// var gCell = {
+//     minesAroundCount: 4,
+//     isShown: true,
+//     isMine: false,
+//     isMarked: true
+// }
+function createCell(rowIdx, colIdx, inCell = '') {
+    /**
+     * Creates a minesweeper cell
+     */
+    return {
+        // i: rowIdx,
+        // j: colIdx,
+        minesAroundCount: 4,
+        isShown: true,
+        isMine: false,
+        isMarked: true
+        // element: inCell
+    }
+
+
 }
 
 function setMinesNegsCount(board) {
@@ -164,4 +252,8 @@ function expandShown(board, elCell, i, j) {
      * we need to open not only that cell, 
      * but also its neighbors. 
      */
+}
+
+function setLevel() {
+    /**sets level of game by chosen button element */
 }
