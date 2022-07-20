@@ -1,3 +1,87 @@
+body {
+    background-color: #eef1ee;
+    color: black;
+    text-align: center;
+}
+
 h1 {
-    color: red;
+    color: rgb(46, 43, 43);
+    /* font-family: Georgia, serif; */
+    font-family: fantasy;
+}
+
+h3 {
+    color: rgb(46, 43, 43);
+    border: 2px solid rgb(254, 186, 236);
+    border-radius: 4px;
+    width: 40%;
+    margin: auto;
+    margin-top: 5px;
+    /* padding: 5px; */
+
+}
+
+.mine-sweeper-container {
+    background-color: #eee8ee;
+    width: 60%;
+    margin: auto;
+    /* padding: 20px; */
+    padding: 5px;
+}
+
+.btn {
+    color: rgb(46, 43, 43);
+    background-color: rgba(254, 186, 236, 0.342);
+    border: 2px solid rgb(254, 186, 236);
+    border-radius: 20px;
+}
+
+.btn:hover {
+    background-color: rgba(254, 186, 236, 0.175);
+    border: 2px solid rgba(253, 120, 217, 0.832);
+    cursor: pointer;
+}
+
+.cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    font-size: 1.5em;
+    border: 2px solid rgb(254, 186, 236);
+    background-color: rgb(250, 224, 243);
+}
+
+.cell:hover {
+    background-color: rgb(252, 211, 241);
+}
+
+.cell-clicked {
+    background-color: rgb(245, 229, 241);
+    border: 2px solid rgba(254, 186, 236, 0.7);
+}
+
+div {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+table {
+    margin: auto;
+}
+
+footer {
+    /* background-color: #212121; */
+    background-color: rgba(254, 186, 236, 0.342);
+    border: 1px solid  #212121;
+    border-radius: 4px;
+    width: 60%;
+    margin: auto;
+    margin-top: 60px;
+    padding: 20px;
+}
+
+img {
+    width: 30px;
+    height: 30px;
+    /* display: none; */
 }
