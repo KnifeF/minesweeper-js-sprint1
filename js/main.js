@@ -24,13 +24,13 @@ o Cell without neighbors – expand it and its 1st degree
 neighbors
 */
 
-// TODO-1: the seed app
+// TODO-1: the seed app - V
 // ##########################
 // 1. Create a 4x4 gBoard Matrix containing Objects. 
 // Place 2 mines manually when each cell’s isShown set to true.
 // 2. Present the mines using renderBoard() function.
 // ##########################
-// TODO-2: counting neighbors
+// TODO-2: counting neighbors - V
 // ##########################
 // 1. Create setMinesNegsCount() and store the numbers
 // (isShown is still true)
@@ -62,7 +62,8 @@ const EMPTY = ' '
 const MINEPATH = 'img/naval-mine.png'
 const FLAGPATH = 'img/kisspng-flag.png'
 
-const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
+const NUMSHTML = []
+const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image">`
 const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image" hidden>`
 
 var gTimer
@@ -85,7 +86,7 @@ var gBoard
 // 4x4 board and how many mines
 // to put)
 var gLevel = {
-    SIZE: 4,
+    SIZE: 8,
     MINES: 2
 }
 
@@ -104,7 +105,7 @@ var gLevel = {
 //     isOn: false,
 //     shownCount: 0,
 //     markedCount: 0,
-//     secsPassed: 0
+//     secsPassed: 0, 
 // }
 
 
@@ -113,10 +114,9 @@ function initGame() {
     /**
      * initializes the minesweeper game
      */
-    console.log('called init')
+    initNumsImgs()
+
     gBoard = buildBoard()
-    setRandMines()
-    // setMinesNegsCount()
     renderBoard(gBoard, '.game-board')
 
 }
@@ -144,24 +144,26 @@ function buildBoard() {
         }
         mat.push(row)
     }
-    // change later -  Place 2 mines manually when each cell’s isShown set to true. 
     // mat[0][2].isMine = true
     // mat[0][2].isShown = true
 
     // mat[2][3].isMine = true
     // mat[2][3].isShown = true
 
+    setRandMines(mat)
+    setMinesNegsCount(mat)
+
     return mat
 }
 
-function setRandMines() {
+function setRandMines(mat) {
     /**
      * Set mines at random locations
      */
     for (var i = 0; i < gLevel.MINES; i++) {
         var randI = getRandomInt(0, gLevel.SIZE)
         var randJ = getRandomInt(0, gLevel.SIZE)
-        gBoard[randI][randJ].isMine = true
+        mat[randI][randJ].isMine = true
     }
 }
 
@@ -172,7 +174,18 @@ function renderBoard(mat, selector) {
         for (var j = 0; j < mat[0].length; j++) {
             // const cell = mat[i][j]
             // var cell = (mat[i][j].isMine) ? MINE : EMPTY
-            var cellImg = (mat[i][j].isMine) ? MINEHTML : FLAGHTML
+            // var cellImg = (mat[i][j].isMine) ? MINEHTML : EMPTY
+            var currCell = mat[i][j]
+
+            var cellImg = EMPTY
+            if (currCell.isMine) {
+                cellImg = MINEHTML
+            } else {
+                console.log('x:', currCell)
+                cellImg = NUMSHTML[currCell.minesAroundCount]
+            }
+            // var cellImg = (currCell.isMine) ? MINEHTML : currCell.minesAroundCount
+
             const className = `cell cell-${i}-${j}`
             strHTML += `<td class="${className}"> ${cellImg} </td>`
         }
@@ -181,17 +194,9 @@ function renderBoard(mat, selector) {
     strHTML += '</tbody></table>'
     const elContainer = document.querySelector(selector)
     elContainer.innerHTML = strHTML
-}
 
-// ##########################
-// TODO-2: counting neighbors
-// ##########################
-// 1. Create setMinesNegsCount() and store the numbers
-// (isShown is still true)
-// 2. Present the board with the neighbor count and the mines
-// using renderBoard() function.
-// 3. Have a console.log presenting the board content – to help
-// you with debugging
+    console.log(mat)
+}
 
 function countNeighbors(cellI, cellJ, mat) {
     /**
@@ -203,7 +208,7 @@ function countNeighbors(cellI, cellJ, mat) {
         for (var j = cellJ - 1; j <= cellJ + 1; j++) {
             if (i === cellI && j === cellJ) continue;
             if (j < 0 || j >= mat[i].length) continue;
-            if (mat[i][j] === MINE) neighborsCount++;
+            if (mat[i][j].isMine) neighborsCount++;
         }
     }
     return neighborsCount;
@@ -241,6 +246,16 @@ function setMinesNegsCount(board) {
      * and set the cell's
      * minesAroundCount
      */
+    console.log('x:', 'called setMinesNegsCount')
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board.length; j++) {
+            var currCell = board[i][j]
+            if (!currCell.isMine) {
+                currCell.minesAroundCount = countNeighbors(i, j, board)
+            }
+
+        }
+    }
 }
 
 // function with same name on utils.js!!
@@ -287,4 +302,15 @@ function expandShown(board, elCell, i, j) {
 
 function setLevel() {
     /**sets level of game by chosen button element */
+}
+
+function initNumsImgs() {
+    /**create paths of images that represent numbers from 0 to 8
+     * (possible neighbors)
+     */
+    for (var i = 0; i < 9; i++) {
+        var numPath = `img/${i}.png`
+        var numHtml = `<img class="negs-count" src="${numPath}" alt="negs-count">`
+        NUMSHTML.push(numHtml)
+    }
 }
