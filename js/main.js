@@ -311,9 +311,12 @@ function cellClicked(elCell, event, i, j) {
     var currCell = gBoard[i][j]
 
     // when cell is clicked and the game is not started yet, it starts the time
-    if (!gGame.isOn) gTimer = setInterval(increaseTime, 1000)
+    if (!gGame.isOn) {
+        gTimer = setInterval(increaseTime, 1000)
+        gGame.isOn = true
+    }
     //https://stackoverflow.com/questions/457826/pass-parameters-in-setinterval-function
-    
+
     switch (event.buttons) {
         case 1:
             // 1: Primary button (usually the left button)
@@ -323,6 +326,7 @@ function cellClicked(elCell, event, i, j) {
             elCellImg.removeAttribute('hidden')
 
             if (currCell.isMine) {
+                console.log('a mine!!')
                 checkLose(elCell)
             }
 
@@ -376,8 +380,10 @@ function checkLose(elCell) {
      * for now the functionality of lives does not exist yet, 
      * so just declares losing game
      */
+    console.log(elCell)
     elCell.style.backgroundColor = 'rgba(209, 33, 33, 0.663)'
     clearInterval(gTimer)
+    gTimer = null
     gGame.isOn = false
     renderSmiley(LOSEHTML)
 }
