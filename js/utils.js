@@ -81,12 +81,12 @@ function copyMat(mat) {
 }
 
 // rednders cell
-function renderCell(i, j, value) {
-    // var elCell = document.querySelector(`[data-i][data-j]`)
-    var elCell = document.querySelector(`[data-i="${i}"][data-j="${j}"]`)
-    elCell.innerText = value
-    return elCell
-}
+// function renderCell(i, j, value) {
+//     // var elCell = document.querySelector(`[data-i][data-j]`)
+//     var elCell = document.querySelector(`[data-i="${i}"][data-j="${j}"]`)
+//     elCell.innerText = value
+//     return elCell
+// }
 
 // // counts neighbors
 // function countNeighbors(cellI, cellJ, mat) {

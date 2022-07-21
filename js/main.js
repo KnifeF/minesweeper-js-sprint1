@@ -52,7 +52,10 @@ neighbors
 // ##########################
 // 1. Randomly locate the 2 mines on the board
 // 2. Present the mines using renderBoard() function.
-
+// https://codinhood.com/nano/dom/disable-context-menu-right-click-javascript
+// 1: Primary button (usually the left button)
+// 2: Secondary button (usually the right button)
+// https://codinhood.com/nano/dom/disable-context-menu-right-click-javascript
 
 
 const MINE = '💣'
@@ -61,14 +64,23 @@ const EMPTY = ' '
 
 const MINEPATH = 'img/naval-mine.png'
 const FLAGPATH = 'img/kisspng-flag.png'
+const WINPATH = 'img/spongebob-won.png'
+const LOSEPATH = 'img/spongebob-lose.png'
+const PLAYINGPATH = 'img/spongebob-playing.png'
+
 
 const NUMSHTML = []
-const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image">`
+const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
 const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image" hidden>`
+const WINHTML = `<img class="win-img" src="${WINPATH}" alt="win-image" hidden>`
+const LOSEHTML = `<img class="lose-img" src="${LOSEPATH}" alt="lose-image" hidden>`
+const PLAYINGHTML = `<img class="playing-img" src="${PLAYINGPATH}" alt="playing-image">`
+
+
 
 var gTimer
 
-var gMinesNegCount
+var gNegs
 
 // The model
 var gBoard
@@ -77,19 +89,14 @@ var gBoard
 //     minesAroundCount: 4,
 //     isShown: true,
 //     isMine: false,
-//     isMarked: true
-// }
+//     isMarked: true }
 
 
 // This is an object by which the
 // board size is set (in this case:
 // 4x4 board and how many mines
 // to put)
-var gLevel = {
-    SIZE: 8,
-    MINES: 2
-}
-
+var gLevel
 
 // This is an object in which you
 // can keep and update the
@@ -101,27 +108,49 @@ var gLevel = {
 // markedCount: How many cells
 // are marked (with a flag)
 // secsPassed: How many seconds passed 
-// var gGame = {
-//     isOn: false,
-//     shownCount: 0,
-//     markedCount: 0,
-//     secsPassed: 0, 
-// }
+var gGame = {
+    isOn: false,
+    shownCount: 0,
+    markedCount: 0,
+    secsPassed: 0,
+}
 
 
 // This is called when page loads
-function initGame() {
+function initGame(size = 4) {
     /**
      * initializes the minesweeper game
      */
+
+    var mines = 2
+    // if (size === 4) mines = 2
+    if (size === 8) mines = 12
+    else if (size === 12) mines = 30
+
+    gLevel = {
+        SIZE: size,
+        MINES: mines
+    }
+
     initNumsImgs()
 
+    renderSmiley()
+
     gBoard = buildBoard()
+
+    preventRightClickMenu()
+
     renderBoard(gBoard, '.game-board')
 
 }
 
 
+function preventRightClickMenu() {
+    /**
+     * Disable browser right-click for the whole page
+     */
+    window.addEventListener("contextmenu", e => e.preventDefault());
+}
 
 function buildBoard() {
     /**
@@ -187,7 +216,8 @@ function renderBoard(mat, selector) {
             // var cellImg = (currCell.isMine) ? MINEHTML : currCell.minesAroundCount
 
             const className = `cell cell-${i}-${j}`
-            strHTML += `<td class="${className}"> ${cellImg} </td>`
+            // strHTML += `<td class="${className}" onclick="cellClicked(this, ${i}, ${j})"> ${cellImg} </td>`
+            strHTML += `<td class="${className}" onmousedown="cellClicked(this, event, ${i}, ${j})"> ${cellImg} </td>`
         }
         strHTML += '</tr>'
     }
@@ -197,6 +227,15 @@ function renderBoard(mat, selector) {
 
     console.log(mat)
 }
+
+// TODO-3: click to reveal
+// ##########################
+// 1. Make sure your renderBoard() function adds the cell ID to
+// each cell and onclick on each cell calls cellClicked()
+// function.
+// 2. Make the default “isShown” to be “false”
+// 3. Implement that clicking a cell with “number” reveals the
+// number of this cell
 
 function countNeighbors(cellI, cellJ, mat) {
     /**
@@ -269,11 +308,70 @@ function setMinesNegsCount(board) {
 // Search the web (and
 // implement) how to hide the
 // context menu on right click
-function cellClicked(elCell, i, j) {
+// Implement that clicking a cell with “number” reveals the number of this cell
+function cellClicked(elCell, event, i, j) {
     /**
      * Called on right click to mark a cell 
      * (suspected to be a mine)
      */
+    console.log('x:', elCell)
+    console.log(event)
+    console.log('i: ', i, '\tj: ', j)
+
+    var elCellImg
+    var currCell = gBoard[i][j]
+
+    switch (event.buttons) {
+        case 1:
+            // 1: Primary button (usually the left button)
+            currCell.isShown = true
+
+            var elCellImg = elCell.querySelector('img')
+            elCellImg.removeAttribute('hidden')
+
+            if (currCell.minesAroundCount === 0 && !currCell.isMine) {
+                expandShown(gBoard, i, j)
+            }
+
+            // call click on cell functions from here
+
+            break
+        case 2:
+            // 2: Secondary button (usually the right button)
+            // markCell(elCell, i, j)
+
+
+            // elCellImg.removeAttribute('hidden')
+            break
+        default:
+            break;
+    }
+
+}
+
+
+// var gCell = {
+//     minesAroundCount: 0,
+//     isShown: false,
+//     isMine: false,
+//     isMarked: false
+// }
+function markCell(elCell, i, j) {
+    /**mark or remove a flag from cell*/
+    if (elCell.isShown) return
+
+    elCellImg = elCell.querySelector('img')
+    if (!gBoard[i][j].isMarked) {
+        elCell.innerHTML = FLAGHTML
+        // elCellImg.removeAttribute('hidden')
+        console.log(elCellImg);
+    } else {
+
+    }
+
+
+    currCell.isMarked = (!currCell.isMarked) ? true : false
+
 }
 
 function checkGameOver() {
@@ -292,16 +390,54 @@ function checkGameOver() {
 // later, try to work more like the
 // real algorithm (see description
 // at the Bonuses section below)
-function expandShown(board, elCell, i, j) {
+function expandShown(board, cellI, cellJ) {
     /**
      * When user clicks a cell with no mines around, 
      * we need to open not only that cell, 
      * but also its neighbors. 
      */
+    // condition to stop recursion if it is a mine??
+    // call function when a cell has no mines as neighbors??
+
+    console.log('expand shown')
+    for (var i = cellI - 1; i <= cellI + 1; i++) {
+        if (i < 0 || i >= board.length) continue;
+
+        for (var j = cellJ - 1; j <= cellJ + 1; j++) {
+            if (i === cellI && j === cellJ) continue;
+            if (j < 0 || j >= board[i].length) continue;
+
+            var currCell = board[i][j]
+
+            if (!currCell.isShown) {
+                currCell.isShown = true
+
+                var CellClassName = getClassName({i, j})
+                var elCellImg = document.querySelector('.' + CellClassName + ' img')
+                // console.log(elCellImg)
+                elCellImg.removeAttribute('hidden')
+            }
+        }
+    }
+    console.log(board)
 }
 
-function setLevel() {
+
+function setLevel(btnNum) {
     /**sets level of game by chosen button element */
+    var size = 0
+    switch (btnNum) {
+        case 0:
+            size = 4
+            break;
+        case 1:
+            size = 8
+            break;
+        case 2:
+            size = 12
+            break;
+    }
+    initGame(size)
 }
 
 function initNumsImgs() {
@@ -310,7 +446,18 @@ function initNumsImgs() {
      */
     for (var i = 0; i < 9; i++) {
         var numPath = `img/${i}.png`
-        var numHtml = `<img class="negs-count" src="${numPath}" alt="negs-count">`
+        var numHtml = `<img class="negs-count" src="${numPath}" alt="negs-count" hidden/>`
         NUMSHTML.push(numHtml)
     }
+}
+
+function renderSmiley() {
+    /**
+     * smiley image according to game status
+     */
+    const elSmileyStatusDiv = document.querySelector('.smiley-status')
+    elSmileyStatusDiv.innerHTML = PLAYINGHTML
+    // elSmileyStatusDiv.innerHTML = WINHTML
+    // elSmileyStatusDiv.innerHTML = LOSEHTML
+
 }

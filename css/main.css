@@ -72,7 +72,7 @@ table {
 footer {
     /* background-color: #212121; */
     background-color: rgba(254, 186, 236, 0.342);
-    border: 1px solid  #212121;
+    border: 1px solid #212121;
     border-radius: 4px;
     width: 60%;
     margin: auto;
@@ -80,8 +80,13 @@ footer {
     padding: 20px;
 }
 
-img {
+.cell img {
     width: 30px;
     height: 30px;
     /* display: none; */
+}
+
+.smiley-status img {
+    width: 60px;
+    height: 60px;
 }
