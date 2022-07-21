@@ -73,8 +73,8 @@ const NUMSHTML = []
 // strings with html format for relevant images
 const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
 const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image" hidden>`
-const WINHTML = `<img class="win-img" src="${WINPATH}" alt="win-image" hidden>`
-const LOSEHTML = `<img class="lose-img" src="${LOSEPATH}" alt="lose-image" hidden>`
+const WINHTML = `<img class="win-img" src="${WINPATH}" alt="win-image">`
+const LOSEHTML = `<img class="lose-img" src="${LOSEPATH}" alt="lose-image">`
 const PLAYINGHTML = `<img class="playing-img" src="${PLAYINGPATH}" alt="playing-image">`
 
 
