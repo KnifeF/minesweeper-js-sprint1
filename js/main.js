@@ -1,10 +1,16 @@
 'use strict'
 
+// todos from pdf or that I talked with Yonathan
 // TODO-1: the seed app - V
 // TODO-2: counting neighbors - V
 // TODO-3: click to reveal - V
 // TODO-4: randomize mines' location - V
-// ##########################
+// TODO-5: timer on first click on cell - V
+// TODO-6: right click put a flag - V ?
+// TODO-7: game is over = lose or win - V ?
+//   WIN: all the mines are flagged, and all the other cells are shown
+// TODO-8: when clicking a mine, all mines should be revealed - V
+//   also reveal the mine clicked
 // https://codinhood.com/nano/dom/disable-context-menu-right-click-javascript
 
 /*
@@ -31,7 +37,6 @@ o Cell without neighbors – expand it and its 1st degree
 neighbors
 */
 
-
 const EMPTY = ' '
 
 // paths for imgs (strings)
@@ -45,7 +50,7 @@ const PLAYINGPATH = 'img/spongebob-playing.png'
 const NUMSHTML = []
 // strings with html format for relevant images
 const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
-const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image" hidden>`
+const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image">`
 const WINHTML = `<img class="win-img" src="${WINPATH}" alt="win-image">`
 const LOSEHTML = `<img class="lose-img" src="${LOSEPATH}" alt="lose-image">`
 const PLAYINGHTML = `<img class="playing-img" src="${PLAYINGPATH}" alt="playing-image">`
@@ -76,21 +81,24 @@ function initGame(size = 4) {
         SIZE: size,
         MINES: mines
     }
-    
+
     // initializes object that includes some game data
     gGame = {
         isOn: false,
-        shownCount: 0,
+        friendlyShownCount: 0,
         markedCount: 0,
         secsPassed: 0
     }
-    
+
     // initializes paths for imgs of numbers (or empty cell img without mines around)
     initNumsImgs()
     // renders smiley image (spongebob)
     renderSmiley()
     // initializes board (matrix with cell objs) for minesweeper
     gBoard = buildBoard()
+
+    console.log('gBoard:', gBoard)
+
     // Disable browser right-click
     preventRightClickMenu()
     // render relevant data from minesweeper board to html
@@ -191,13 +199,10 @@ function renderBoard(mat, selector) {
             var currCell = mat[i][j]
 
             var cellImg = EMPTY
-            if (currCell.isMine) {
-                // mine img element
-                cellImg = MINEHTML
-            } else {
-                // nums img element
-                cellImg = NUMSHTML[currCell.minesAroundCount]
-            }
+            // str of an img element
+            if (currCell.isMine) cellImg = MINEHTML
+            else cellImg = NUMSHTML[currCell.minesAroundCount]
+
             // from index i,j to className str
             const className = `cell cell-${i}-${j}`
             // add td element that includes img to str
@@ -250,70 +255,76 @@ function cellClicked(elCell, event, i, j) {
     }
 
     switch (event.buttons) {
+        // case 1: Primary button (usually the left button)
         case 1:
-            // case 1: Primary button (usually the left button)
+            if (currCell.isMarked) return
 
+            // selector to match img element within clicked td element
             var elCellImg = elCell.querySelector('img')
 
-            // Left click reveals the cell’s content
-            // When left clicking on cells there are 3 possible cases:
+            // for left clicking on cells there are 3 possible cases:
             // cases 1 & 2: mine or Cell with neighbors – reveal the cell alone
             // case 3: Cell without neighbors – expand it and its 1st degree neighbors
             if (currCell.isMine) {
                 currCell.isShown = true
-                // display the content of cell that includes a mine (remove hidden attr)
-
-                // elCellImg.removeAttribute('hidden')
-
-                // when the clicked cell is a mine and the user loses a game
-                // when clicking a mine, all other mines should be revealed too
-                // checkLose(elCell, i, j)
+                // when the clicked cell is a mine and the user loses a game.
                 checkLose(i, j)
-            } else if (currCell.minesAroundCount === 0) {
+
+            } else if (currCell.minesAroundCount >= 0) {
+
+                if (!currCell.isShown && !currCell.isMarked) gGame.friendlyShownCount++
+
                 currCell.isShown = true
-                // display content of the Cell without neighbors (remove hidden attr)
+                // display content of the Cell (remove hidden attr)
                 elCellImg.removeAttribute('hidden')
-                expandShown(gBoard, i, j)
-            } else if (currCell.minesAroundCount > 0) {
-                currCell.isShown = true
-                // display content of the Cell with neighbors (remove hidden attr)
-                elCellImg.removeAttribute('hidden')
+                // open cell's neighbors
+                if (currCell.minesAroundCount === 0) expandShown(gBoard, i, j)
             }
+
             break
+        // case 2: Secondary button (usually the right button)
         case 2:
-            // case 2: Secondary button (usually the right button)
+            if (!currCell.isMarked && currCell.isShown) return
 
-            // TODO-2: right click put a flag
-            // count mark(flag)+not mine to win
-            // WIN: all the mines are flagged, and all the other cells are
-            // shown
-
-
-            // markCell(elCell, i, j)
-            // elCellImg.removeAttribute('hidden')
+            markCell(elCell, i, j)
             break
+
         default:
             break;
     }
 
-}
+    console.log('markedCount:', gGame.markedCount)
+    console.log('friendlyShownCount:', gGame.friendlyShownCount)
 
-function markCell(elCell, i, j) {
-    /**mark or remove a flag from cell*/
-    if (elCell.isShown) return
-
-    elCellImg = elCell.querySelector('img')
-    if (!gBoard[i][j].isMarked) {
-        elCell.innerHTML = FLAGHTML
-        // elCellImg.removeAttribute('hidden')
-        console.log(elCellImg);
-    } else {
-
+    if (gGame.markedCount + gGame.friendlyShownCount === gLevel.SIZE ** 2) {
+        checkWin(gBoard)
     }
 
 
-    currCell.isMarked = (!currCell.isMarked) ? true : false
+}
 
+function markCell(elCell, i, j) {
+    /**Right click flags/unflags a suspected cell 
+     * (you cannot reveal a flagged cell*/
+
+    // extract outerHTML (string) from the td element
+    // var elImgStr = elCellImg.outerHTML
+
+    var currCell = gBoard[i][j]
+
+    // check if cell is not flagged
+    if (!currCell.isMarked) {
+        elCell.innerHTML = FLAGHTML
+        gGame.markedCount++
+    }
+    else {
+        gGame.markedCount--
+        if (currCell.isMine) elCell.innerHTML = MINEHTML
+        else elCell.innerHTML = NUMSHTML[currCell.minesAroundCount]
+    }
+
+    currCell.isMarked = !currCell.isMarked
+    currCell.isShown = !currCell.isShown
 }
 
 function checkLose(rowIdx, colIdx) {
@@ -321,13 +332,7 @@ function checkLose(rowIdx, colIdx) {
      * for now the functionality of lives does not exist yet, 
      * so just declares losing game
      */
-    // clears the interval and stops the timer
-    clearInterval(gTimer)
-    gTimer = null
-    // set isOn to false (game ended)
-    gGame.isOn = false
-    // render lose smiley image
-    renderSmiley(LOSEHTML)
+    console.log('You Lose!')
 
     // when clicking a mine, all other mines should be revealed too
     for (var i = 0; i < gBoard.length; i++) {
@@ -349,10 +354,16 @@ function checkLose(rowIdx, colIdx) {
                     elCurrCell.style.backgroundColor = 'rgba(209, 33, 33, 0.663)'
                 }
             }
-            // console.log(i, j)
-            // console.log('x:', currCell)
         }
     }
+
+    finishGame(LOSEHTML)
+}
+
+function finishGame(smileyHtml = LOSEHTML) {
+    /**
+     * functionality that repeats when game is ended
+     */
 
     // select all td elements and remove onmousedown attr - 
     // not allowing more clicks after loosing the game
@@ -360,14 +371,42 @@ function checkLose(rowIdx, colIdx) {
     for (var i = 0; i < elTds.length; i++) {
         elTds[i].removeAttribute('onmousedown')
     }
+
+    // clears the interval and stops the timer
+    clearInterval(gTimer)
+    gTimer = null
+    // set isOn to false (game ended)
+    gGame.isOn = false
+    // render lose smiley image
+    renderSmiley(smileyHtml)
 }
 
-function checkGameOver() {
+function checkWin(board) {
     /**
      * Game ends when all mines are marked, 
-     * and all the other cells are shown
-
+     * and all the other cells are shown - than declare that the player has won the game
      */
+    var totalCount = 0
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board.length; j++) {
+            var currCell = gBoard[i][j]
+
+            // player cannot win yet if the board includes 'friendly' cells that are not shown
+            // player cannot win yet if the board includes 'friendly' cells that are marked as suspicious by a flag
+            if ((!currCell.isMine && !currCell.isShown)
+                || (!currCell.isMine && currCell.isMarked)) return
+            // increase total count when player marked correctly a mine, or revealed cells without being exploded
+            if ((currCell.isMine && currCell.isMarked)
+                || (!currCell.isMine && currCell.isShown)) totalCount++
+        }
+    }
+    console.log('total sum: ', totalCount)
+
+    if (totalCount === gLevel.SIZE ** 2) {
+        console.log('You Won!')
+
+        finishGame(WINHTML)
+    }
 }
 
 function expandShown(board, cellI, cellJ) {
@@ -385,9 +424,10 @@ function expandShown(board, cellI, cellJ) {
 
             var currCell = board[i][j]
 
-            // not shown cell
-            if (!currCell.isShown) {
+            // not shown or marked (by a flag) cell
+            if (!currCell.isShown && !currCell.isMarked) {
                 currCell.isShown = true
+                gGame.friendlyShownCount++
                 // match img element within a relevant class name, using a selector
                 var CellClassName = getClassName({ i, j })
                 var elCellImg = document.querySelector('.' + CellClassName + ' img')
