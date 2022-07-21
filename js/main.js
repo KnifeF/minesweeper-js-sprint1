@@ -1,19 +1,11 @@
 'use strict'
 
-// todos from pdf or that I talked with Yonathan
-// TODO-1: the seed app - V
-// TODO-2: counting neighbors - V
-// TODO-3: click to reveal - V
-// TODO-4: randomize mines' location - V
-// TODO-5: timer on first click on cell - V
-// TODO-6: right click put a flag - V ?
-// TODO-7: game is over = lose or win - V ?
-//   WIN: all the mines are flagged, and all the other cells are shown
-// TODO-8: when clicking a mine, all mines should be revealed - V
-//   also reveal the mine clicked
-// https://codinhood.com/nano/dom/disable-context-menu-right-click-javascript
 
 /*
+The goal of the game is to uncover all the squares that do
+not contain mines without being "blown up" by clicking on a
+square with a mine underneath.
+
 Functionality and Features
 ● Show a timer that starts on first click (right / left) and stops
 when game is over.
@@ -38,57 +30,48 @@ neighbors
 */
 
 const EMPTY = ' '
-
 // paths for imgs (strings)
 const MINEPATH = 'img/naval-mine.png'
 const FLAGPATH = 'img/kisspng-flag.png'
 const WINPATH = 'img/spongebob-won.png'
 const LOSEPATH = 'img/spongebob-lose.png'
 const PLAYINGPATH = 'img/spongebob-playing.png'
-
 // array to include strings with html format for relevant images of some numbers
 const NUMSHTML = []
 // strings with html format for relevant images
 const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
 const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image">`
-const WINHTML = `<img class="win-img" src="${WINPATH}" alt="win-image">`
-const LOSEHTML = `<img class="lose-img" src="${LOSEPATH}" alt="lose-image">`
-const PLAYINGHTML = `<img class="playing-img" src="${PLAYINGPATH}" alt="playing-image">`
-
+const WINHTML = `<img class="win-img" onclick="initGame()" src="${WINPATH}" alt="win-image">`
+const LOSEHTML = `<img class="lose-img" onclick="initGame()" src="${LOSEPATH}" alt="lose-image">`
+const PLAYINGHTML = `<img class="playing-img" onclick="initGame()" src="${PLAYINGPATH}" alt="playing-image">`
 
 // TODO-5: to include a timer interval??
 var gTimer
-// The board data model (will include matrix)
-var gBoard
 // The level data model
 var gLevel
-
 // The game data model
 var gGame
+// The board data model (will include matrix)
+var gBoard
 
 function initGame(size = 4) {
     /**
-     * This is called when page loads
-     * initializes the minesweeper game
+     * This is called when page loads initializes the minesweeper game
      */
+    
+    // reset interval, and represented time on web page (html)
+    if (gTimer) clearInterval(gTimer)
+    resetTimeHtml()
 
     // each level is with different board size and num of mines
     var mines = 2
     if (size === 8) mines = 12
     else if (size === 12) mines = 30
+    
     // initializes object that includes level data - board size (for matrix) and mines to put
-    gLevel = {
-        SIZE: size,
-        MINES: mines
-    }
-
+    gLevel = { SIZE: size, MINES: mines }
     // initializes object that includes some game data
-    gGame = {
-        isOn: false,
-        friendlyShownCount: 0,
-        markedCount: 0,
-        secsPassed: 0
-    }
+    gGame = { isOn: false, friendlyShownCount: 0, markedCount: 0, secsPassed: 0 }
 
     // initializes paths for imgs of numbers (or empty cell img without mines around)
     initNumsImgs()
@@ -96,8 +79,6 @@ function initGame(size = 4) {
     renderSmiley()
     // initializes board (matrix with cell objs) for minesweeper
     gBoard = buildBoard()
-
-    console.log('gBoard:', gBoard)
 
     // Disable browser right-click
     preventRightClickMenu()
@@ -133,11 +114,7 @@ function initializeCell() {
     /**
      * initializes a minesweeper cell
      */
-    return {
-        minesAroundCount: 0,
-        isShown: false,
-        isMine: false,
-        isMarked: false
+    return { minesAroundCount: 0, isShown: false, isMine: false, isMarked: false
     }
 }
 
@@ -239,7 +216,6 @@ function countNeighbors(cellI, cellJ, mat) {
     return neighborsCount;
 }
 
-// Implement that clicking a cell with “number” reveals the number of this cell
 function cellClicked(elCell, event, i, j) {
     /**
      * cell clicked functionality - Left click reveals the cell’s content.
@@ -293,9 +269,6 @@ function cellClicked(elCell, event, i, j) {
             break;
     }
 
-    console.log('markedCount:', gGame.markedCount)
-    console.log('friendlyShownCount:', gGame.friendlyShownCount)
-
     if (gGame.markedCount + gGame.friendlyShownCount === gLevel.SIZE ** 2) {
         checkWin(gBoard)
     }
@@ -306,9 +279,6 @@ function cellClicked(elCell, event, i, j) {
 function markCell(elCell, i, j) {
     /**Right click flags/unflags a suspected cell 
      * (you cannot reveal a flagged cell*/
-
-    // extract outerHTML (string) from the td element
-    // var elImgStr = elCellImg.outerHTML
 
     var currCell = gBoard[i][j]
 
@@ -356,7 +326,6 @@ function checkLose(rowIdx, colIdx) {
             }
         }
     }
-
     finishGame(LOSEHTML)
 }
 
@@ -447,6 +416,13 @@ function increaseTime() {
     // update time inside the element's innerText
     var elTime = document.querySelector('span.time')
     elTime.innerText = `Time: ${gGame.secsPassed}`
+}
+
+function resetTimeHtml() {
+    /**reset time and renders to an html element */
+    // update time inside the element's innerText
+    var elTime = document.querySelector('span.time')
+    elTime.innerText = `Time: ${0}`
 }
 
 function setLevel(btnNum) {
