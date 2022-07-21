@@ -293,7 +293,7 @@ function increaseTime() {
      * updates by 1 sec the time that passed from the beginning of the game
      */
     gGame.secsPassed++
-    var elTime = elCell.querySelector('.time')
+    var elTime = document.querySelector('span.time')
     elTime.innerText = `Time: ${gGame.secsPassed}`
 }
 
@@ -312,7 +312,8 @@ function cellClicked(elCell, event, i, j) {
 
     // when cell is clicked and the game is not started yet, it starts the time
     if (!gGame.isOn) gTimer = setInterval(increaseTime, 1000)
-
+    //https://stackoverflow.com/questions/457826/pass-parameters-in-setinterval-function
+    
     switch (event.buttons) {
         case 1:
             // 1: Primary button (usually the left button)
