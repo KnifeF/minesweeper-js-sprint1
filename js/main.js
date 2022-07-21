@@ -190,9 +190,19 @@ function setRandMines(mat) {
      * Set mines at random locations
      */
     for (var i = 0; i < gLevel.MINES; i++) {
-        var randI = getRandomInt(0, gLevel.SIZE)
-        var randJ = getRandomInt(0, gLevel.SIZE)
-        mat[randI][randJ].isMine = true
+        var isPosEmpty = false 
+        // need to avoid random mine on same index i, j
+        while (!isPosEmpty) {
+            var randI = getRandomInt(0, gLevel.SIZE)
+            var randJ = getRandomInt(0, gLevel.SIZE)
+            if (!mat[randI][randJ].isMine) {
+                isPosEmpty = true
+                mat[randI][randJ].isMine = true
+                // log stuff
+                // console.log(mat[randI][randJ])
+                // console.log(`mine ${i + 1} : at (${randI}, ${randJ})`)
+            }
+        }
     }
 }
 
@@ -210,7 +220,7 @@ function renderBoard(mat, selector) {
             if (currCell.isMine) {
                 cellImg = MINEHTML
             } else {
-                console.log('x:', currCell)
+                // console.log('x:', currCell)
                 cellImg = NUMSHTML[currCell.minesAroundCount]
             }
             // var cellImg = (currCell.isMine) ? MINEHTML : currCell.minesAroundCount
@@ -285,7 +295,7 @@ function setMinesNegsCount(board) {
      * and set the cell's
      * minesAroundCount
      */
-    console.log('x:', 'called setMinesNegsCount')
+    // console.log('x:', 'called setMinesNegsCount')
     for (var i = 0; i < board.length; i++) {
         for (var j = 0; j < board.length; j++) {
             var currCell = board[i][j]
@@ -314,9 +324,9 @@ function cellClicked(elCell, event, i, j) {
      * Called on right click to mark a cell 
      * (suspected to be a mine)
      */
-    console.log('x:', elCell)
-    console.log(event)
-    console.log('i: ', i, '\tj: ', j)
+    // console.log('x:', elCell)
+    // console.log(event)
+    // console.log('i: ', i, '\tj: ', j)
 
     var elCellImg
     var currCell = gBoard[i][j]
@@ -412,7 +422,7 @@ function expandShown(board, cellI, cellJ) {
             if (!currCell.isShown) {
                 currCell.isShown = true
 
-                var CellClassName = getClassName({i, j})
+                var CellClassName = getClassName({ i, j })
                 var elCellImg = document.querySelector('.' + CellClassName + ' img')
                 // console.log(elCellImg)
                 elCellImg.removeAttribute('hidden')
