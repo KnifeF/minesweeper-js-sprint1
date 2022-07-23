@@ -90,3 +90,12 @@ footer {
     width: 60px;
     height: 60px;
 }
+
+a {
+    color: rgb(189, 8, 28);
+    font-weight: bold;
+}
+
+span {
+    margin-right: 10px;
+}

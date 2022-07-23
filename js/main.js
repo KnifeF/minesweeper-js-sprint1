@@ -5,29 +5,24 @@
 The goal of the game is to uncover all the squares that do
 not contain mines without being "blown up" by clicking on a
 square with a mine underneath.
-
-Functionality and Features
-● Show a timer that starts on first click (right / left) and stops
-when game is over.
-● Left click reveals the cell’s content
-● Right click flags/unflags a suspected cell (you cannot reveal a
-flagged cell)
-● Game ends when:
-o LOSE: when clicking a mine, all mines should be revealed
-o WIN: all the mines are flagged, and all the other cells are
-shown
-● Support 3 levels of the game
-o Beginner (4*4 with 2 MINES)
-o Medium (8 * 8 with 12 MINES)
-o Expert (12 * 12 with 30 MINES)
-● If you have the time, make your Minesweeper look great.
-● Expanding: When left clicking on cells there are 3 possible
-cases we want to address:
-o MINE – reveal the mine clicked
-o Cell with neighbors – reveal the cell alone
-o Cell without neighbors – expand it and its 1st degree
-neighbors
 */
+
+// Further Tasks for fun:
+// TODO-1: The Smiley. Add smiley (feel free to switch icons \ images).
+//   Normal 😃. Sad & Dead – LOSE 🤯(stepped on a mine). Sunglasses – WIN 😎. 
+//   Clicking the smiley should reset the game - V
+// TODO-2: Lives - Add support for “LIVES” - The user has 3 LIVES. When a MINE is clicked, there is an 
+//   indication to the user that he clicked a mine. The LIVES counter decrease. The user can 
+//   continue playing. - V
+// TODO-3: Add support for HINTS - The user has 3 hints. 
+//   When a hint is clicked, it changes its look, example. 
+//   Now, when a cell (unrevealed) is clicked, the cell and its neighbors are revealed 
+// for a second, and the clicked hint disappears.
+// TODO-4: Best Score -Keep the best score in local storage (per level) and show it on the page
+// TODO-5: First click is never a Mine - Make sure the first clicked cell 
+//   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
+//   only on first click.
+
 
 const EMPTY = ' '
 // paths for imgs (strings)
@@ -41,12 +36,14 @@ const NUMSHTML = []
 // strings with html format for relevant images
 const MINEHTML = `<img class="mine" src="${MINEPATH}" alt="mine-image" hidden>`
 const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image">`
-const WINHTML = `<img class="win-img" onclick="initGame()" src="${WINPATH}" alt="win-image">`
-const LOSEHTML = `<img class="lose-img" onclick="initGame()" src="${LOSEPATH}" alt="lose-image">`
-const PLAYINGHTML = `<img class="playing-img" onclick="initGame()" src="${PLAYINGPATH}" alt="playing-image">`
+const WINHTML = `<img class="win-img" onclick="initGame()" src="${WINPATH}" alt="win-image" title="Click to reset">`
+const LOSEHTML = `<img class="lose-img" onclick="initGame()" src="${LOSEPATH}" alt="lose-image" title="Click to reset">`
+const PLAYINGHTML = `<img class="playing-img" onclick="initGame()" src="${PLAYINGPATH}" alt="playing-image" title="Click to reset">`
 
 // TODO-5: to include a timer interval??
 var gTimer
+// countdown for a hint
+var countdownHint
 // The level data model
 var gLevel
 // The game data model
@@ -58,20 +55,23 @@ function initGame(size = 4) {
     /**
      * This is called when page loads initializes the minesweeper game
      */
-    
-    // reset interval, and represented time on web page (html)
+
+    // reset interval
     if (gTimer) clearInterval(gTimer)
-    resetTimeHtml()
 
     // each level is with different board size and num of mines
     var mines = 2
     if (size === 8) mines = 12
     else if (size === 12) mines = 30
-    
+
+    var nOfLives = (size > 4) ? 3 : 2
     // initializes object that includes level data - board size (for matrix) and mines to put
     gLevel = { SIZE: size, MINES: mines }
     // initializes object that includes some game data
-    gGame = { isOn: false, friendlyShownCount: 0, markedCount: 0, secsPassed: 0 }
+    gGame = {
+        isOn: false, friendlyShownCount: 0, markedCount: 0, minesRevealedCount: 0,
+        secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 3
+    }
 
     // initializes paths for imgs of numbers (or empty cell img without mines around)
     initNumsImgs()
@@ -84,6 +84,9 @@ function initGame(size = 4) {
     preventRightClickMenu()
     // render relevant data from minesweeper board to html
     renderBoard(gBoard, '.game-board')
+
+    // render game details
+    renderGameDetails()
 }
 
 function buildBoard() {
@@ -114,7 +117,8 @@ function initializeCell() {
     /**
      * initializes a minesweeper cell
      */
-    return { minesAroundCount: 0, isShown: false, isMine: false, isMarked: false
+    return {
+        minesAroundCount: 0, isShown: false, isMine: false, isMarked: false
     }
 }
 
@@ -221,7 +225,6 @@ function cellClicked(elCell, event, i, j) {
      * cell clicked functionality - Left click reveals the cell’s content.
      * right click marks a cell with a flag (suspected to be a mine), if it's hidden
      */
-    var elCellImg
     var currCell = gBoard[i][j]
 
     // when cell is clicked and the game is not started yet, it starts the time
@@ -230,38 +233,35 @@ function cellClicked(elCell, event, i, j) {
         gGame.isOn = true
     }
 
+    // Case 1: left click. Case 2: right click.
     switch (event.buttons) {
-        // case 1: Primary button (usually the left button)
         case 1:
             if (currCell.isMarked) return
 
-            // selector to match img element within clicked td element
-            var elCellImg = elCell.querySelector('img')
-
-            // for left clicking on cells there are 3 possible cases:
-            // cases 1 & 2: mine or Cell with neighbors – reveal the cell alone
-            // case 3: Cell without neighbors – expand it and its 1st degree neighbors
+            // for left clicking on cells there are 3 possible cases
             if (currCell.isMine) {
+
                 currCell.isShown = true
+                // expose cell and not allowing clicks on this element
+                setNotAllowed(elCell, true)
                 // when the clicked cell is a mine and the user loses a game.
-                checkLose(i, j)
+                if (checkLose(i, j)) return
+
+                gGame.minesRevealedCount++
 
             } else if (currCell.minesAroundCount >= 0) {
 
                 if (!currCell.isShown && !currCell.isMarked) gGame.friendlyShownCount++
 
                 currCell.isShown = true
-                // display content of the Cell (remove hidden attr)
-                elCellImg.removeAttribute('hidden')
+                // expose cell and not allowing clicks on this element
+                setNotAllowed(elCell)
                 // open cell's neighbors
                 if (currCell.minesAroundCount === 0) expandShown(gBoard, i, j)
             }
-
             break
-        // case 2: Secondary button (usually the right button)
         case 2:
             if (!currCell.isMarked && currCell.isShown) return
-
             markCell(elCell, i, j)
             break
 
@@ -269,11 +269,9 @@ function cellClicked(elCell, event, i, j) {
             break;
     }
 
-    if (gGame.markedCount + gGame.friendlyShownCount === gLevel.SIZE ** 2) {
+    if (gGame.markedCount + gGame.friendlyShownCount + gGame.minesRevealedCount === gLevel.SIZE ** 2) {
         checkWin(gBoard)
     }
-
-
 }
 
 function markCell(elCell, i, j) {
@@ -302,6 +300,12 @@ function checkLose(rowIdx, colIdx) {
      * for now the functionality of lives does not exist yet, 
      * so just declares losing game
      */
+    decreaseLives()
+    // not lose when player has lives remaining
+    if (gGame.lifeRemainCount > 0) {
+        return false
+    }
+
     console.log('You Lose!')
 
     // when clicking a mine, all other mines should be revealed too
@@ -314,19 +318,16 @@ function checkLose(rowIdx, colIdx) {
                 currCell.isShown = true
 
                 // find td element according to cell index on board (i, j)
-                var elCurrCell = document.querySelector('.' + getClassName({ i, j }))
+                // var elCurrCell = document.querySelector('.' + getClassName({ i, j }))
 
-                // display image (remove hidden from element)
-                var elCurrCellImg = elCurrCell.querySelector('.mine')
-                if (elCurrCellImg) {
-                    elCurrCellImg.removeAttribute('hidden')
-                    // change bg color of the relevant td element (of the mine cell)
-                    elCurrCell.style.backgroundColor = 'rgba(209, 33, 33, 0.663)'
-                }
+                var CellClassName = getClassName({ i, j })
+                var elCell = document.querySelector('.' + CellClassName)
+                setNotAllowed(elCell, true)
             }
         }
     }
     finishGame(LOSEHTML)
+    return true
 }
 
 function finishGame(smileyHtml = LOSEHTML) {
@@ -338,7 +339,7 @@ function finishGame(smileyHtml = LOSEHTML) {
     // not allowing more clicks after loosing the game
     var elTds = document.querySelectorAll('td')
     for (var i = 0; i < elTds.length; i++) {
-        elTds[i].removeAttribute('onmousedown')
+        setNotAllowed(elTds[i])
     }
 
     // clears the interval and stops the timer
@@ -363,7 +364,7 @@ function checkWin(board) {
             // player cannot win yet if the board includes 'friendly' cells that are not shown
             // player cannot win yet if the board includes 'friendly' cells that are marked as suspicious by a flag
             if ((!currCell.isMine && !currCell.isShown)
-                || (!currCell.isMine && currCell.isMarked)) return
+                || (!currCell.isMine && currCell.isMarked)) return false
             // increase total count when player marked correctly a mine, or revealed cells without being exploded
             if ((currCell.isMine && currCell.isMarked)
                 || (!currCell.isMine && currCell.isShown)) totalCount++
@@ -371,11 +372,13 @@ function checkWin(board) {
     }
     console.log('total sum: ', totalCount)
 
-    if (totalCount === gLevel.SIZE ** 2) {
+    if (totalCount + gGame.minesRevealedCount === gLevel.SIZE ** 2) {
         console.log('You Won!')
 
         finishGame(WINHTML)
+        return true
     }
+    return false
 }
 
 function expandShown(board, cellI, cellJ) {
@@ -399,7 +402,12 @@ function expandShown(board, cellI, cellJ) {
                 gGame.friendlyShownCount++
                 // match img element within a relevant class name, using a selector
                 var CellClassName = getClassName({ i, j })
-                var elCellImg = document.querySelector('.' + CellClassName + ' img')
+
+                var elCell = document.querySelector('.' + CellClassName)
+                var elCellImg = elCell.querySelector('img')
+                // var elCellImg = document.querySelector('.' + CellClassName + ' img')
+
+                setNotAllowed(elCell)
                 // show relevant element that represent the cell obj within html
                 elCellImg.removeAttribute('hidden')
             }
@@ -416,6 +424,73 @@ function increaseTime() {
     // update time inside the element's innerText
     var elTime = document.querySelector('span.time')
     elTime.innerText = `Time: ${gGame.secsPassed}`
+}
+
+function decreaseLives() {
+    /**
+     * updates lives after clicking a mine and render updated lives count to html
+     */
+    // updates lives remain count in the game model
+    gGame.lifeRemainCount--
+    // update lives count inside the element's innerText
+    var elLivesCount = document.querySelector('span.lives')
+    elLivesCount.innerText = `Lives: ${gGame.lifeRemainCount}\t`
+}
+
+function flashHint() {
+    /** show a hint*/
+    var elHint = document.querySelector('span.hints')
+    if (gGame.hintsRemainCount > 0) {
+        gGame.hintsRemainCount--
+        setTimeout(showRadnomCell, 1500)
+    } else {
+        elHint.removeAttribute('onmousedown')
+    }
+    elHint.innerText = `Hints: ${gGame.hintsRemainCount}\t`
+}
+
+function showRadnomCell() {
+    /**
+     * show random cell
+     */
+    var emptyCells = []
+    for (var i = 0; i < gBoard.length; i++) {
+        for (var j = 0; j < gBoard.length; j++) {
+            var currCell = gBoard[i][j]
+            if (!currCell.isMine && !currCell.isMarked && !currCell.isShown) {
+                emptyCells.push({ i, j })
+            }
+        }
+    }
+    if (emptyCells) {
+        var randCell = getRandomInt(0, emptyCells)
+
+        var CellClassName = getClassName(emptyCells[randCell])
+        var elCell = document.querySelector('.' + CellClassName)
+        
+
+    }
+
+}
+
+function renderGameDetails() {
+    /**
+     * renders to html some game details
+     */
+    // reset lives count
+    var elLivesCount = document.querySelector('span.lives')
+    elLivesCount.innerText = `Lives: ${gGame.lifeRemainCount}\t`
+
+    // reset safe clicks count
+    var elSafeClick = document.querySelector('span.safe-clicks')
+    elSafeClick.innerText = `Safe Clicks: ${gGame.safeClicksRemainCount}\t`
+
+    // reset hints count
+    var elHint = document.querySelector('span.hints')
+    elHint.innerText = `Hints: ${gGame.hintsRemainCount}\t`
+
+    // resets represented time on web page (html)
+    resetTimeHtml()
 }
 
 function resetTimeHtml() {
@@ -470,4 +545,24 @@ function preventRightClickMenu() {
      * Disable browser right-click for the whole page
      */
     window.addEventListener("contextmenu", e => e.preventDefault());
+}
+
+function setNotAllowed(elCell, isMine = false) {
+    /**
+     * set element's cursor style to not allowed 
+     * and remove attr 'onmousedown'
+     */
+    elCell.removeAttribute('onmousedown')
+    // change cursor to not allowed
+    elCell.style.cursor = 'not-allowed'
+
+    // selector to match img element within clicked td element
+    var elCellImg = (isMine) ? elCell.querySelector('img.mine') : elCell.querySelector('img')
+
+    if (elCellImg) {
+        // display content of the Cell (remove hidden attr)
+        elCellImg.removeAttribute('hidden')
+        // change mine background to a red shade
+        if (isMine) elCell.style.backgroundColor = 'rgba(209, 33, 33, 0.663)'
+    }
 }
