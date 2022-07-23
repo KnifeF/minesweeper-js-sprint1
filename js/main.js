@@ -14,7 +14,7 @@ square with a mine underneath.
 // TODO-2: Lives - Add support for “LIVES” - The user has 3 LIVES. When a MINE is clicked, there is an 
 //   indication to the user that he clicked a mine. The LIVES counter decrease. The user can 
 //   continue playing. - V
-// TODO-3: Add support for HINTS - The user has 3 hints. 
+// TODO-3: Add support for HINTS - The user has 3 hints. - V
 //   When a hint is clicked, it changes its look, example. 
 //   Now, when a cell (unrevealed) is clicked, the cell and its neighbors are revealed 
 // for a second, and the clicked hint disappears.
@@ -370,7 +370,6 @@ function checkWin(board) {
                 || (!currCell.isMine && currCell.isShown)) totalCount++
         }
     }
-    console.log('total sum: ', totalCount)
 
     if (totalCount + gGame.minesRevealedCount === gLevel.SIZE ** 2) {
         console.log('You Won!')
@@ -442,7 +441,7 @@ function flashHint() {
     var elHint = document.querySelector('span.hints')
     if (gGame.hintsRemainCount > 0) {
         gGame.hintsRemainCount--
-        setTimeout(showRadnomCell, 1500)
+        showRadnomCell()
     } else {
         elHint.removeAttribute('onmousedown')
     }
@@ -451,7 +450,7 @@ function flashHint() {
 
 function showRadnomCell() {
     /**
-     * show random cell
+     * show random cell for 1 second
      */
     var emptyCells = []
     for (var i = 0; i < gBoard.length; i++) {
@@ -463,12 +462,14 @@ function showRadnomCell() {
         }
     }
     if (emptyCells) {
-        var randCell = getRandomInt(0, emptyCells)
-
+        var randCell = getRandomInt(0, emptyCells.length)
         var CellClassName = getClassName(emptyCells[randCell])
-        var elCell = document.querySelector('.' + CellClassName)
-        
+        var elCellImg = document.querySelector('.' + CellClassName + ' img')
 
+        elCellImg.hidden = false
+        setTimeout(function () {
+            elCellImg.hidden = true
+        }, 1000);
     }
 
 }
