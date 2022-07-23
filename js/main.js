@@ -22,7 +22,7 @@ square with a mine underneath.
 // TODO-5: First click is never a Mine - Make sure the first clicked cell 
 //   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
 //   only on first click.
-
+// TODO-6: add sound - V
 
 const EMPTY = ' '
 // paths for imgs (strings)
@@ -40,8 +40,12 @@ const WINHTML = `<img class="win-img" onclick="initGame()" src="${WINPATH}" alt=
 const LOSEHTML = `<img class="lose-img" onclick="initGame()" src="${LOSEPATH}" alt="lose-image" title="Click to reset">`
 const PLAYINGHTML = `<img class="playing-img" onclick="initGame()" src="${PLAYINGPATH}" alt="playing-image" title="Click to reset">`
 
-// TODO-5: to include a timer interval??
+// a timer
 var gTimer
+// used for playing audio
+var gLoseAudio
+var gWonAudio
+var gExplodeAudio
 // countdown for a hint
 var countdownHint
 // The level data model
@@ -72,6 +76,12 @@ function initGame(size = 4) {
         isOn: false, friendlyShownCount: 0, markedCount: 0, minesRevealedCount: 0,
         secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 3
     }
+
+    // Music from Pixabay and DaddysMusic
+    gLoseAudio = new Audio('sound/videogame-death-sound.mp3')
+    gWonAudio = new Audio('sound/grand-final-orchestral-tutti.mp3')
+    gExplodeAudio = new Audio('sound/Explosion-sound.mp3')
+
 
     // initializes paths for imgs of numbers (or empty cell img without mines around)
     initNumsImgs()
@@ -301,12 +311,17 @@ function checkLose(rowIdx, colIdx) {
      * so just declares losing game
      */
     decreaseLives()
+    // explosion sound
+    playSound(0)
+
     // not lose when player has lives remaining
     if (gGame.lifeRemainCount > 0) {
         return false
     }
 
     console.log('You Lose!')
+    // losing sound
+    playSound(1)
 
     // when clicking a mine, all other mines should be revealed too
     for (var i = 0; i < gBoard.length; i++) {
@@ -373,7 +388,8 @@ function checkWin(board) {
 
     if (totalCount + gGame.minesRevealedCount === gLevel.SIZE ** 2) {
         console.log('You Won!')
-
+        // winning sound
+        playSound(2)
         finishGame(WINHTML)
         return true
     }
@@ -473,19 +489,22 @@ function showRadnomCell() {
             for (var j = randCell.j - 1; j <= randCell.j + 1; j++) {
                 if (j < 0 || j >= gBoard[i].length) continue;
 
-                var CellClassName = getClassName({ i, j })
-                var elCellImg = document.querySelector('.' + CellClassName + ' img')
-
-                imgToShowElems.push(elCellImg)
+                var currCell = gBoard[i][j]
+                // not need hint for showed items or flags
+                if (!currCell.isShown && !currCell.isMarked) {
+                    var CellClassName = getClassName({ i, j })
+                    var elCellImg = document.querySelector('.' + CellClassName + ' img')
+                    imgToShowElems.push(elCellImg)
+                }
             }
         }
 
         // change hidden attr of an html image element
-        for(var i = 0 ; i < imgToShowElems.length ; i++) {
+        for (var i = 0; i < imgToShowElems.length; i++) {
             imgToShowElems[i].hidden = false
         }
         setTimeout(function () {
-            for(var i = 0 ; i < imgToShowElems.length ; i++) {
+            for (var i = 0; i < imgToShowElems.length; i++) {
                 imgToShowElems[i].hidden = true
             }
         }, 1500);
@@ -584,5 +603,25 @@ function setNotAllowed(elCell, isMine = false) {
         elCellImg.removeAttribute('hidden')
         // change mine background to a red shade
         if (isMine) elCell.style.backgroundColor = 'rgba(209, 33, 33, 0.663)'
+    }
+}
+
+function playSound(opt) {
+    /**
+     * Play sound by case from a given number (explode/lose/won)
+     */
+    // https://www.codegrepper.com/code-examples/javascript/play+sound+mp3+javascript
+    switch (opt) {
+        case 0:
+            gExplodeAudio.play()
+            break;
+        case 1:
+            gLoseAudio.play()
+            break;
+        case 2:
+            gWonAudio.play()
+            break;
+        default:
+            break;
     }
 }
