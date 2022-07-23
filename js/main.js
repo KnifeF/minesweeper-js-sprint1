@@ -14,10 +14,10 @@ square with a mine underneath.
 // TODO-2: Lives - Add support for “LIVES” - The user has 3 LIVES. When a MINE is clicked, there is an 
 //   indication to the user that he clicked a mine. The LIVES counter decrease. The user can 
 //   continue playing. - V
-// TODO-3: Add support for HINTS - The user has 3 hints. - V
+// TODO-3: Add support for HINTS - The user has 3 hints.
 //   When a hint is clicked, it changes its look, example. 
 //   Now, when a cell (unrevealed) is clicked, the cell and its neighbors are revealed 
-// for a second, and the clicked hint disappears.
+// for a second, and the clicked hint disappears. - V
 // TODO-4: Best Score -Keep the best score in local storage (per level) and show it on the page
 // TODO-5: First click is never a Mine - Make sure the first clicked cell 
 //   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
@@ -461,15 +461,34 @@ function showRadnomCell() {
             }
         }
     }
-    if (emptyCells) {
-        var randCell = getRandomInt(0, emptyCells.length)
-        var CellClassName = getClassName(emptyCells[randCell])
-        var elCellImg = document.querySelector('.' + CellClassName + ' img')
 
-        elCellImg.hidden = false
+    if (emptyCells) {
+        var randCell = emptyCells[getRandomInt(0, emptyCells.length)]
+
+        var imgToShowElems = []
+        // reveal cell and its' neighbors for 1 sec only (as hint)
+        for (var i = randCell.i - 1; i <= randCell.i + 1; i++) {
+            if (i < 0 || i >= gBoard.length) continue;
+
+            for (var j = randCell.j - 1; j <= randCell.j + 1; j++) {
+                if (j < 0 || j >= gBoard[i].length) continue;
+
+                var CellClassName = getClassName({ i, j })
+                var elCellImg = document.querySelector('.' + CellClassName + ' img')
+
+                imgToShowElems.push(elCellImg)
+            }
+        }
+
+        // change hidden attr of an html image element
+        for(var i = 0 ; i < imgToShowElems.length ; i++) {
+            imgToShowElems[i].hidden = false
+        }
         setTimeout(function () {
-            elCellImg.hidden = true
-        }, 1000);
+            for(var i = 0 ; i < imgToShowElems.length ; i++) {
+                imgToShowElems[i].hidden = true
+            }
+        }, 1500);
     }
 
 }
