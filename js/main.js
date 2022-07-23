@@ -18,7 +18,7 @@ square with a mine underneath.
 //   When a hint is clicked, it changes its look, example. 
 //   Now, when a cell (unrevealed) is clicked, the cell and its neighbors are revealed 
 // for a second, and the clicked hint disappears. - V
-// TODO-4: Best Score -Keep the best score in local storage (per level) and show it on the page - V
+// TODO-4: Best Score - Keep the best score in local storage (per level) and show it on the page - V
 //   https://www.w3schools.com/jsref/prop_win_localstorage.asp
 //   The subfolder containing this file is "\AppData\Local\Google\Chrome\User Data\Default\Local Storage" on Windows, 
 //   and " ~/Library/Application Support/Google/Chrome/Default/Local Storage" on macOS
@@ -26,7 +26,7 @@ square with a mine underneath.
 //   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
 //   only on first click.
 // TODO-6: add sound - V
-// TODO-7: add recursive neighbors expanding
+// TODO-7: add recursive neighbors expanding - V
 
 const EMPTY = ' '
 // paths for imgs (strings)
@@ -106,6 +106,8 @@ function initGame(size = 4) {
     getBestTimeScore()
     // render game details
     renderGameDetails()
+
+    console.log(gBoard)
 }
 
 function buildBoard() {
@@ -438,6 +440,9 @@ function expandShown(board, cellI, cellJ) {
                 setNotAllowed(elCell)
                 // show relevant element that represent the cell obj within html
                 elCellImg.removeAttribute('hidden')
+
+                // recursive neighbors expanding ??
+                if (currCell.minesAroundCount === 0) expandShown(board, i, j)
             }
         }
     }
