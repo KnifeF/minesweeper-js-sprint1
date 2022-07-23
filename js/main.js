@@ -7,7 +7,7 @@ not contain mines without being "blown up" by clicking on a
 square with a mine underneath.
 */
 
-// Further Tasks for fun:
+// Further/bonus tasks for fun:
 // TODO-1: The Smiley. Add smiley (feel free to switch icons \ images).
 //   Normal 😃. Sad & Dead – LOSE 🤯(stepped on a mine). Sunglasses – WIN 😎. 
 //   Clicking the smiley should reset the game - V
@@ -18,11 +18,15 @@ square with a mine underneath.
 //   When a hint is clicked, it changes its look, example. 
 //   Now, when a cell (unrevealed) is clicked, the cell and its neighbors are revealed 
 // for a second, and the clicked hint disappears. - V
-// TODO-4: Best Score -Keep the best score in local storage (per level) and show it on the page
+// TODO-4: Best Score -Keep the best score in local storage (per level) and show it on the page - V
+//   https://www.w3schools.com/jsref/prop_win_localstorage.asp
+//   The subfolder containing this file is "\AppData\Local\Google\Chrome\User Data\Default\Local Storage" on Windows, 
+//   and " ~/Library/Application Support/Google/Chrome/Default/Local Storage" on macOS
 // TODO-5: First click is never a Mine - Make sure the first clicked cell 
 //   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
 //   only on first click.
 // TODO-6: add sound - V
+// TODO-7: add recursive neighbors expanding
 
 const EMPTY = ' '
 // paths for imgs (strings)
@@ -54,6 +58,8 @@ var gLevel
 var gGame
 // The board data model (will include matrix)
 var gBoard
+// used to get/set best time at local storage
+var gBestTimeStored
 
 function initGame(size = 4) {
     /**
@@ -62,6 +68,8 @@ function initGame(size = 4) {
 
     // reset interval
     if (gTimer) clearInterval(gTimer)
+
+    gBestTimeStored = null
 
     // each level is with different board size and num of mines
     var mines = 2
@@ -74,7 +82,7 @@ function initGame(size = 4) {
     // initializes object that includes some game data
     gGame = {
         isOn: false, friendlyShownCount: 0, markedCount: 0, minesRevealedCount: 0,
-        secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 3
+        secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 0
     }
 
     // Music from Pixabay and DaddysMusic
@@ -95,6 +103,7 @@ function initGame(size = 4) {
     // render relevant data from minesweeper board to html
     renderBoard(gBoard, '.game-board')
 
+    getBestTimeScore()
     // render game details
     renderGameDetails()
 }
@@ -332,9 +341,6 @@ function checkLose(rowIdx, colIdx) {
                 // set cell isShown val to true
                 currCell.isShown = true
 
-                // find td element according to cell index on board (i, j)
-                // var elCurrCell = document.querySelector('.' + getClassName({ i, j }))
-
                 var CellClassName = getClassName({ i, j })
                 var elCell = document.querySelector('.' + CellClassName)
                 setNotAllowed(elCell, true)
@@ -376,8 +382,8 @@ function checkWin(board) {
         for (var j = 0; j < board.length; j++) {
             var currCell = gBoard[i][j]
 
-            // player cannot win yet if the board includes 'friendly' cells that are not shown
-            // player cannot win yet if the board includes 'friendly' cells that are marked as suspicious by a flag
+            // player cannot win yet if the board includes 'friendly' cells that are not shown, or 
+            // 'friendly' cells that are marked as suspicious by a flag
             if ((!currCell.isMine && !currCell.isShown)
                 || (!currCell.isMine && currCell.isMarked)) return false
             // increase total count when player marked correctly a mine, or revealed cells without being exploded
@@ -390,6 +396,13 @@ function checkWin(board) {
         console.log('You Won!')
         // winning sound
         playSound(2)
+
+        if (gBestTimeStored === -1 || gBestTimeStored > gGame.secsPassed) {
+            gBestTimeStored = gGame.secsPassed
+            document.querySelector(".best-time").innerText = `Best Time Score: ${gBestTimeStored}`
+            setBestTimeScore(gBestTimeStored)
+        }
+
         finishGame(WINHTML)
         return true
     }
@@ -507,7 +520,7 @@ function showRadnomCell() {
             for (var i = 0; i < imgToShowElems.length; i++) {
                 imgToShowElems[i].hidden = true
             }
-        }, 1500);
+        }, 1000);
     }
 
 }
@@ -530,6 +543,11 @@ function renderGameDetails() {
 
     // resets represented time on web page (html)
     resetTimeHtml()
+
+    // checks if there is best time (score) and renders it
+    if (gBestTimeStored && gBestTimeStored !== -1) {
+        document.querySelector(".best-time").innerText = `Best Time on this board: ${gBestTimeStored}`
+    }
 }
 
 function resetTimeHtml() {
@@ -623,5 +641,37 @@ function playSound(opt) {
             break;
         default:
             break;
+    }
+}
+
+function isSupportedForStorage() {
+    /**
+     * check if browser supports local storage
+     */
+    return (typeof (Storage) !== "undefined")
+}
+
+function getBestTimeScore() {
+    /**
+     * retrieve/get best time score from storage by relevant level
+     */
+    if (isSupportedForStorage()) {
+        if (gBoard.length === 4) gBestTimeStored = localStorage.getItem("minesweeperBestTime")
+        else if (gBoard.length === 8) gBestTimeStored = localStorage.getItem("minesweeperBestTimeMedium")
+        else if (gBoard.length === 12) gBestTimeStored = localStorage.getItem("minesweeperBestTimeExpert")
+        if (!gBestTimeStored) gBestTimeStored = -1
+    }
+}
+
+function setBestTimeScore(bestScore = -1) {
+    /**
+     * Create a localStorage name/value pair with name="best-time" and value=bestScore
+     */
+    if (isSupportedForStorage()) {
+        if (gBestTimeStored) {
+            if (gBoard.length === 4) localStorage.minesweeperBestTime = bestScore
+            else if (gBoard.length === 8) localStorage.minesweeperBestTimeMedium = bestScore
+            else if (gBoard.length === 12) localStorage.minesweeperBestTimeExpert = bestScore
+        }
     }
 }
