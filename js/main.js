@@ -602,7 +602,7 @@ function renderGameDetails() {
     // checks if there is best time (score) and renders it
     if (gBestTimeStored && gBestTimeStored !== -1) {
         document.querySelector(".best-time").innerText = `Best Time on this board: ${gBestTimeStored}`
-    }
+    } else document.querySelector(".best-time").innerText = `Best Time on this board: X`
 }
 
 function resetTimeHtml() {
