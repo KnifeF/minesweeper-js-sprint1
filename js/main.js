@@ -547,7 +547,7 @@ function showRadnomCell() {
 }
 
 function showSafe() {
-    /**show a cell that is safe to click for few seconds */
+    /**show a cell that is safe to click for a short time */
     var emptyCellPos = getEmptyCell()
     if (emptyCellPos) {
 
@@ -558,7 +558,7 @@ function showSafe() {
             // change hidden attr of an html image element for a few seconds
             elCellImg.hidden = false
             // https://www.geeksforgeeks.org/javascript-anonymous-functions/
-            setTimeout(() => elCellImg.hidden = true, 4000);
+            setTimeout(() => elCellImg.hidden = true, 1200);
         }
     }
 }
