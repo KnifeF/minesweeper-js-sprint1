@@ -99,3 +99,11 @@ a {
 span {
     margin-right: 10px;
 }
+
+.hints:hover, .safe-clicks:hover {
+    /* background-color: rgb(252, 211, 241); */
+    color: #833ab4;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+}

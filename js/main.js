@@ -7,7 +7,7 @@ not contain mines without being "blown up" by clicking on a
 square with a mine underneath.
 */
 
-// Further/bonus tasks for fun:
+// Optional - Further/bonus tasks for fun:
 // TODO-1: The Smiley. Add smiley (feel free to switch icons \ images).
 //   Normal 😃. Sad & Dead – LOSE 🤯(stepped on a mine). Sunglasses – WIN 😎. 
 //   Clicking the smiley should reset the game - V
@@ -22,11 +22,20 @@ square with a mine underneath.
 //   https://www.w3schools.com/jsref/prop_win_localstorage.asp
 //   The subfolder containing this file is "\AppData\Local\Google\Chrome\User Data\Default\Local Storage" on Windows, 
 //   and " ~/Library/Application Support/Google/Chrome/Default/Local Storage" on macOS
-// TODO-5: First click is never a Mine - Make sure the first clicked cell 
+// TODO-5: add sound - V
+// TODO-6: add recursive neighbors expanding - V
+// TODO-7: Safe click - The user has 3 Safe-Clicks. A click on it will mark a random covered cell (for a few seconds) 
+//   that is safe to click (does not contain a MINE) - V
+// TODO-8: First click is never a Mine - Make sure the first clicked cell 
 //   is never a mine (like in the real game). HINT: place the mines and count the neighbors 
 //   only on first click.
-// TODO-6: add sound - V
-// TODO-7: add recursive neighbors expanding - V
+// TODO-9: Add an "UNDO" button, each click on that button takes the game back by one step (can go all the way back to game start).
+// TODO-10: Add an “7 BOOM!” button, clicking the button restarts the game and locate the MINES according to the “7 BOOM”
+//   principles (each cell-index that contains “7” or a multiplication of “7”). Note that the cell-index 
+//   shall be a continuous number (i.e. in a 8*8 Matrix is shall be between 0 to 63).
+// TODO-11: Manually positioned mines - Create a “manually create” mode in which user first positions 
+// the mines (by clicking cells) and then plays.
+
 
 const EMPTY = ' '
 // paths for imgs (strings)
@@ -43,6 +52,9 @@ const FLAGHTML = `<img class="flag" src="${FLAGPATH}" alt="flag-image">`
 const WINHTML = `<img class="win-img" onclick="initGame()" src="${WINPATH}" alt="win-image" title="Click to reset">`
 const LOSEHTML = `<img class="lose-img" onclick="initGame()" src="${LOSEPATH}" alt="lose-image" title="Click to reset">`
 const PLAYINGHTML = `<img class="playing-img" onclick="initGame()" src="${PLAYINGPATH}" alt="playing-image" title="Click to reset">`
+const SAFECLICKHTML = '<span title="Reveal safe click" class="safe-clicks" onmousedown="flashSafeHint(false)">Safe Clicks: '
+const HINTSHTML = '<span title="Reveal cells quickly" class="hints" onmousedown="flashSafeHint()">Hints: '
+
 
 // a timer
 var gTimer
@@ -50,8 +62,6 @@ var gTimer
 var gLoseAudio
 var gWonAudio
 var gExplodeAudio
-// countdown for a hint
-var countdownHint
 // The level data model
 var gLevel
 // The game data model
@@ -82,7 +92,7 @@ function initGame(size = 4) {
     // initializes object that includes some game data
     gGame = {
         isOn: false, friendlyShownCount: 0, markedCount: 0, minesRevealedCount: 0,
-        secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 0
+        secsPassed: 0, lifeRemainCount: nOfLives, hintsRemainCount: 3, safeClicksRemainCount: 3
     }
 
     // Music from Pixabay and DaddysMusic
@@ -106,8 +116,6 @@ function initGame(size = 4) {
     getBestTimeScore()
     // render game details
     renderGameDetails()
-
-    console.log(gBoard)
 }
 
 function buildBoard() {
@@ -470,41 +478,49 @@ function decreaseLives() {
     elLivesCount.innerText = `Lives: ${gGame.lifeRemainCount}\t`
 }
 
-function flashHint() {
-    /** show a hint*/
-    var elHint = document.querySelector('span.hints')
-    if (gGame.hintsRemainCount > 0) {
-        gGame.hintsRemainCount--
-        showRadnomCell()
+function flashSafeHint(hint = true) {
+    /** show a hint or a safe click and update the span element*/
+    if (!gGame.isOn) return
+
+    var elToUpdate
+    
+    if (hint) {
+        elToUpdate = document.querySelector('span.hints')
+
+        if (gGame.hintsRemainCount > 0) {
+            gGame.hintsRemainCount--
+            showRadnomCell()
+
+        } else elToUpdate.removeAttribute('onmousedown')
+        elToUpdate.innerText = `Hints: ${gGame.hintsRemainCount}\t`
+
     } else {
-        elHint.removeAttribute('onmousedown')
+        elToUpdate = document.querySelector('span.safe-clicks')
+
+        if (gGame.safeClicksRemainCount > 0) {
+            gGame.safeClicksRemainCount--
+            showSafe()
+            
+        } else elToUpdate.removeAttribute('onmousedown')
+        elToUpdate.innerText = `Safe Clicks: ${gGame.safeClicksRemainCount}\t`
     }
-    elHint.innerText = `Hints: ${gGame.hintsRemainCount}\t`
+
 }
 
 function showRadnomCell() {
     /**
      * show random cell for 1 second
      */
-    var emptyCells = []
-    for (var i = 0; i < gBoard.length; i++) {
-        for (var j = 0; j < gBoard.length; j++) {
-            var currCell = gBoard[i][j]
-            if (!currCell.isMine && !currCell.isMarked && !currCell.isShown) {
-                emptyCells.push({ i, j })
-            }
-        }
-    }
+    var randCellPos = getEmptyCell()
 
-    if (emptyCells) {
-        var randCell = emptyCells[getRandomInt(0, emptyCells.length)]
+    if (randCellPos) {
 
         var imgToShowElems = []
         // reveal cell and its' neighbors for 1 sec only (as hint)
-        for (var i = randCell.i - 1; i <= randCell.i + 1; i++) {
+        for (var i = randCellPos.i - 1; i <= randCellPos.i + 1; i++) {
             if (i < 0 || i >= gBoard.length) continue;
 
-            for (var j = randCell.j - 1; j <= randCell.j + 1; j++) {
+            for (var j = randCellPos.j - 1; j <= randCellPos.j + 1; j++) {
                 if (j < 0 || j >= gBoard[i].length) continue;
 
                 var currCell = gBoard[i][j]
@@ -530,6 +546,39 @@ function showRadnomCell() {
 
 }
 
+function showSafe() {
+    /**show a cell that is safe to click for few seconds */
+    var emptyCellPos = getEmptyCell()
+    if (emptyCellPos) {
+
+        var CellClassName = getClassName(emptyCellPos)
+        var elCellImg = document.querySelector('.' + CellClassName + ' img')
+
+        if (elCellImg) {
+            // change hidden attr of an html image element for a few seconds
+            elCellImg.hidden = false
+            // https://www.geeksforgeeks.org/javascript-anonymous-functions/
+            setTimeout(() => elCellImg.hidden = true, 4000);
+        }
+    }
+}
+
+function getEmptyCell() {
+    // get empty cells from the board
+    var emptyCells = []
+    for (var i = 0; i < gBoard.length; i++) {
+        for (var j = 0; j < gBoard.length; j++) {
+            var currCell = gBoard[i][j]
+            if (!currCell.isMine && !currCell.isMarked && !currCell.isShown) {
+                emptyCells.push({ i, j })
+            }
+        }
+    }
+    // random cell with i,j index, taken from found empty cells
+    var randCellPos = (emptyCells) ? emptyCells[getRandomInt(0, emptyCells.length)] : null
+    return randCellPos
+}
+
 function renderGameDetails() {
     /**
      * renders to html some game details
@@ -540,11 +589,12 @@ function renderGameDetails() {
 
     // reset safe clicks count
     var elSafeClick = document.querySelector('span.safe-clicks')
+    elSafeClick.outerHTML = `${SAFECLICKHTML}${gGame.safeClicksRemainCount}\t</span>`
     elSafeClick.innerText = `Safe Clicks: ${gGame.safeClicksRemainCount}\t`
 
     // reset hints count
     var elHint = document.querySelector('span.hints')
-    elHint.innerText = `Hints: ${gGame.hintsRemainCount}\t`
+    elHint.outerHTML = `${HINTSHTML}${gGame.hintsRemainCount}\t</span>`
 
     // resets represented time on web page (html)
     resetTimeHtml()
